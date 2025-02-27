@@ -61,8 +61,7 @@ class Res101_SFCN_bayesian(nn.Module):
         self.train()
         preds = torch.stack([self.forward(x) for _ in range(n_samples)], dim=0)
         mean = preds.mean(dim=0)
-        var = preds.var(dim=0)
-        return mean, var
+        return mean
 
 
                 

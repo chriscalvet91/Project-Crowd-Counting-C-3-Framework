@@ -95,7 +95,7 @@ class Trainer():
                 gt_map = gt_map.cuda()
 
             self.optimizer.zero_grad()
-            pred_map, variance = self.net(img, gt_map)[0]
+            pred_map, variance = self.net(img, gt_map)
             loss = self.net.loss
             loss.backward()
             self.optimizer.step()
