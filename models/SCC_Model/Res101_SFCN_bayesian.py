@@ -59,8 +59,9 @@ class Res101_SFCN_bayesian(nn.Module):
 
     def forward(self, x, n_samples=10):
         self.train()
-        preds = torch.stack([self.forward_nonmc(x) for _ in range(n_samples)], dim=0)
-        mean = preds.mean(dim=0)
+        mean = 0
+        for i in range(n_samples):
+            mean += self.forward_nonmc(x) / n_samples
         return mean
 
 
