@@ -23,13 +23,14 @@ class CrowdCounter(nn.Module):
             from .SCC_Model.Res101 import Res101 as net            
         elif model_name == 'Res101_SFCN':
             from .SCC_Model.Res101_SFCN import Res101_SFCN as net
+        elif model_name == 'Res101_SFCN_bayesian':
+            from .SCC_Model.Res101_SFCN_bayesian import Res101_SFCN_bayesian as net
 
         self.CCN = net()
-        if len(gpus)>1:
-            self.CCN = torch.nn.DataParallel(self.CCN, device_ids=gpus).cuda()
-        else:
+        self.loss_mse_fn = nn.MSELoss()
+        if torch.cuda.is_available():
             self.CCN=self.CCN.cuda()
-        self.loss_mse_fn = nn.MSELoss().cuda()
+            self.loss_mse_fn = self.loss_mse_fn.cuda()
         
     @property
     def loss(self):

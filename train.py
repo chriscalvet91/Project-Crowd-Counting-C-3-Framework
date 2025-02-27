@@ -12,7 +12,7 @@ if seed is not None:
     torch.cuda.manual_seed(seed)
 
 gpus = cfg.GPU_ID
-if len(gpus)==1:
+if len(gpus)==1 and torch.cuda.is_available():
     torch.cuda.set_device(gpus[0])
 
 torch.backends.cudnn.benchmark = True
@@ -56,6 +56,8 @@ elif net in ['CMTL']:
     from trainer_for_CMTL import Trainer # double losses and double outputs
 elif net in ['PCCNet']:
     from trainer_for_M3T3OCC import Trainer
+elif net in ['Res101_SFCN_bayesian']:
+    from trainer_bayesian import Trainer
 
 #------------Start Training------------
 pwd = os.path.split(os.path.realpath(__file__))[0]
