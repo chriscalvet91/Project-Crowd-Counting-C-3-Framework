@@ -52,14 +52,14 @@ class Res101_SFCN_bayesian(nn.Module):
         
 
 
-    def forward(self,x):
+    def forward_nonmc(self,x):
         x = self.model(x)
         x = F.interpolate(x,scale_factor=8)
         return x
 
-    def forward_mc(self, x, n_samples=10):
+    def forward(self, x, n_samples=10):
         self.train()
-        preds = torch.stack([self.forward(x) for _ in range(n_samples)], dim=0)
+        preds = torch.stack([self.forward_nonmc(x) for _ in range(n_samples)], dim=0)
         mean = preds.mean(dim=0)
         return mean
 

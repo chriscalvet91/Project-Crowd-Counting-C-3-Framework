@@ -48,7 +48,7 @@ elif data_mode == 'UCSD':
 
 #------------Prepare Trainer------------
 net = cfg.NET
-if net in ['MCNN', 'AlexNet', 'VGG', 'VGG_DECODER', 'Res50', 'Res101', 'CSRNet','Res101_SFCN']:
+if net in ['MCNN', 'AlexNet', 'VGG', 'VGG_DECODER', 'Res50', 'Res101', 'CSRNet','Res101_SFCN', 'Res101_SFCN_bayesian']:
     from trainer import Trainer
 elif net in ['SANet']: 
     from trainer_for_M2TCC import Trainer # double losses but signle output
@@ -56,8 +56,6 @@ elif net in ['CMTL']:
     from trainer_for_CMTL import Trainer # double losses and double outputs
 elif net in ['PCCNet']:
     from trainer_for_M3T3OCC import Trainer
-elif net in ['Res101_SFCN_bayesian']:
-    from trainer_bayesian import Trainer
 
 #------------Start Training------------
 pwd = os.path.split(os.path.realpath(__file__))[0]
