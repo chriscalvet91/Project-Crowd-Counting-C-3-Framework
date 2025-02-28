@@ -52,17 +52,11 @@ class Res101_SFCN_bayesian(nn.Module):
         
 
 
-    def forward_nonmc(self,x):
+    def forward(self,x):
+        self.train()
         x = self.model(x)
         x = F.interpolate(x,scale_factor=8)
         return x
-
-    def forward(self, x, n_samples=10):
-        self.train()
-        mean = 0
-        for i in range(n_samples):
-            mean += self.forward_nonmc(x) / n_samples
-        return mean
 
 
                 
