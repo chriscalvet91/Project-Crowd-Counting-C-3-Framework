@@ -64,7 +64,10 @@ class Trainer():
                 
             # training    
             self.timer['train time'].tic()
-            self.train()
+            if self.net_name == 'Res101_SFCN_bayesian':
+                self.train()
+            else:
+                self.train_mc()
             self.timer['train time'].toc(average=False)
 
             print( 'train time: {:.2f}s'.format(self.timer['train time'].diff) )
@@ -106,7 +109,38 @@ class Trainer():
                 self.timer['iter time'].toc(average=False)
                 print( '[ep %d][it %d][loss %.4f][lr %.4f][%.2fs]' % \
                         (self.epoch + 1, i + 1, loss.item(), self.optimizer.param_groups[0]['lr']*10000, self.timer['iter time'].diff) )
-                print( '        [cnt: gt: %.1f pred: %.2f]' % (gt_map[0].sum().data/self.cfg_data.LOG_PARA, pred_map[0].sum().data/self.cfg_data.LOG_PARA) )           
+                print( '        [cnt: gt: %.1f pred: %.2f]' % (gt_map[0].sum().data/self.cfg_data.LOG_PARA, pred_map[0].sum().data/self.cfg_data.LOG_PARA) )
+
+    def train_mc(self, nb_samples=5): # training for all datasets
+        self.net.train()
+        print("train_mc")
+        for i, data in enumerate(self.train_loader, 0):
+            self.timer['iter time'].tic()
+            img, gt_map = data
+            img = Variable(img)
+            gt_map = Variable(gt_map)
+            if torch.cuda.is_available():
+                img = img.cuda()
+                gt_map = gt_map.cuda()
+
+            pred_map = None
+            for _ in range(nb_samples):
+                self.optimizer.zero_grad()
+                if pred_map is None:
+                    pred_map = self.net(img, gt_map)/nb_samples
+                else:
+                    pred_map += self.net(img, gt_map)/nb_samples
+                loss = self.net.loss
+                loss.backward()
+                self.optimizer.step()
+
+            if (i + 1) % cfg.PRINT_FREQ == 0:
+                self.i_tb += 1
+                self.writer.add_scalar('train_loss', loss.item(), self.i_tb)
+                self.timer['iter time'].toc(average=False)
+                print( '[ep %d][it %d][loss %.4f][lr %.4f][%.2fs]' % \
+                        (self.epoch + 1, i + 1, loss.item(), self.optimizer.param_groups[0]['lr']*10000, self.timer['iter time'].diff) )
+                print( '        [cnt: gt: %.1f pred: %.2f]' % (gt_map[0].sum().data/self.cfg_data.LOG_PARA, pred_map[0].sum().data/self.cfg_data.LOG_PARA) )
 
 
     def validate_V1(self):# validate_V1 for SHHA, SHHB, UCF-QNRF, UCF50
