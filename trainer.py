@@ -59,15 +59,16 @@ class Trainer():
         # self.validate_V3()
         for epoch in range(self.epoch,cfg.MAX_EPOCH):
             self.epoch = epoch
-            if epoch > cfg.LR_DECAY_START:
-                self.scheduler.step()
                 
             # training    
             self.timer['train time'].tic()
             if self.net_name == 'Res101_SFCN_bayesian':
-                self.train()
-            else:
                 self.train_mc()
+            else:
+                self.train()
+
+            if epoch > cfg.LR_DECAY_START:
+                self.scheduler.step()
             self.timer['train time'].toc(average=False)
 
             print( 'train time: {:.2f}s'.format(self.timer['train time'].diff) )
@@ -113,7 +114,6 @@ class Trainer():
 
     def train_mc(self, nb_samples=5): # training for all datasets
         self.net.train()
-        print("train_mc")
         for i, data in enumerate(self.train_loader, 0):
             self.timer['iter time'].tic()
             img, gt_map = data
