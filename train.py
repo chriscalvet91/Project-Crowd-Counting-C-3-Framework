@@ -43,7 +43,10 @@ elif data_mode == 'Mall':
     from datasets.Mall.setting import cfg_data
 elif data_mode == 'UCSD':
     from datasets.UCSD.loading_data import loading_data
-    from datasets.UCSD.setting import cfg_data 
+    from datasets.UCSD.setting import cfg_data
+elif data_mode == 'DroneCrowd':
+    from datasets.DroneCrowd.loading_data import loading_data
+    from datasets.DroneCrowd.setting import cfg_data
 
 
 #------------Prepare Trainer------------
