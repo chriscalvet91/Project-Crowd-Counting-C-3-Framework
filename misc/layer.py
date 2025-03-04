@@ -63,7 +63,7 @@ class convDU(nn.Module):
 
         fea_stack = []
         for i in range(h):
-            i_fea = fea.select(2, i).resize(n,c,1,w)
+            i_fea = fea.select(2, i).view(n,c,1,w)
             if i == 0:
                 fea_stack.append(i_fea)
                 continue
@@ -98,7 +98,7 @@ class convLR(nn.Module):
 
         fea_stack = []
         for i in range(w):
-            i_fea = fea.select(3, i).resize(n,c,h,1)
+            i_fea = fea.select(3, i).view(n,c,h,1)
             if i == 0:
                 fea_stack.append(i_fea)
                 continue
