@@ -1,9 +1,9 @@
 clc; clear all;
 addpath('../');
 
-standard_size = [1080, 1920];
+standard_size = [768,1024];
 
-att = 'test';
+att = 'train';
 
 dataset_name = 'DroneCrowd';
 path = ['/Data/DroneCrowd/' att '_data/images/'];

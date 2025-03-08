@@ -25,6 +25,8 @@ class CrowdCounter(nn.Module):
             from .SCC_Model.Res101_SFCN import Res101_SFCN as net
         elif model_name == 'Res101_SFCN_bayesian':
             from .SCC_Model.Res101_SFCN_bayesian import Res101_SFCN_bayesian as net
+        elif model_name == 'LinearNet':
+            from .SCC_Model.LinearNet import LinearNet as net
 
         self.CCN = net()
         self.loss_mse_fn = nn.MSELoss()

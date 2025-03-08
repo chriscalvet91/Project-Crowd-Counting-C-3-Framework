@@ -64,6 +64,8 @@ class Trainer():
             self.timer['train time'].tic()
             if self.net_name == 'Res101_SFCN_bayesian':
                 self.train_mc()
+            elif self.net_name == 'LinearNet':
+                self.train_linear()
             else:
                 self.train()
 
@@ -78,7 +80,10 @@ class Trainer():
             if epoch%cfg.VAL_FREQ==0 or epoch>cfg.VAL_DENSE_START:
                 self.timer['val time'].tic()
                 if self.data_mode in ['SHHA', 'SHHB', 'QNRF', 'UCF50', 'DroneCrowd']:
-                    self.validate_V1()
+                    if self.net_name == 'LinearNet':
+                        self.validate_lin()
+                    else:    
+                        self.validate_V1()
                 elif self.data_mode == 'WE':
                     self.validate_V2()
                 elif self.data_mode == 'GCC':
@@ -111,6 +116,47 @@ class Trainer():
                 print( '[ep %d][it %d][loss %.4f][lr %.4f][%.2fs]' % \
                         (self.epoch + 1, i + 1, loss.item(), self.optimizer.param_groups[0]['lr']*10000, self.timer['iter time'].diff) )
                 print( '        [cnt: gt: %.1f pred: %.2f]' % (gt_map[0].sum().data/self.cfg_data.LOG_PARA, pred_map[0].sum().data/self.cfg_data.LOG_PARA) )
+
+
+    def train_linear(self): # training for LinearNet
+        self.net.train()
+    
+        for i, data in enumerate(self.train_loader, 0):
+            self.timer['iter time'].tic()
+            img, gt_map = data
+            img = Variable(img)
+            gt_map = Variable(gt_map)
+
+            if torch.cuda.is_available():
+                img = img.cuda()
+                gt_map = gt_map.cuda()
+            
+            gt_count = gt_map.view(gt_map.size(0), -1).sum(dim=1) / self.cfg_data.LOG_PARA
+            gt_count = gt_count.unsqueeze(1)
+            
+            self.optimizer.zero_grad()
+
+            pred_count = self.net(img, gt_count)
+            loss = nn.MSELoss()(pred_count.squeeze(), gt_count.squeeze())
+            
+            loss.backward()
+            self.optimizer.step()
+
+            if (i + 1) % cfg.PRINT_FREQ == 0:
+                self.i_tb += 1
+                self.writer.add_scalar('train_loss', loss.item(), self.i_tb)
+                self.timer['iter time'].toc(average=False)
+                
+                print('[ep %d][it %d][loss %.4f][lr %.4f][%.2fs]' % (
+                    self.epoch + 1, i + 1, loss.item(), 
+                    self.optimizer.param_groups[0]['lr'] * 10000, 
+                    self.timer['iter time'].diff
+                ))
+                
+                print('        [cnt: gt: %.1f pred: %.2f]' % (
+                    gt_count[0].item(), 
+                    pred_count[0].item()
+                ))
 
     def train_mc(self, nb_samples=5): # training for all datasets
         self.net.train()
@@ -187,6 +233,48 @@ class Trainer():
             [mae, mse, loss],self.train_record,self.log_txt)
         print_summary(self.exp_name,[mae, mse, loss],self.train_record)
 
+    def validate_lin(self):  # for LinearNet
+        self.net.eval()
+        
+        losses = AverageMeter()
+        maes = AverageMeter()
+        mses = AverageMeter()
+        for vi, data in enumerate(self.val_loader, 0):
+            img, gt_map = data
+            with torch.no_grad():
+                img = Variable(img).cuda()
+                gt_map = Variable(gt_map).cuda()
+
+                gt_count = gt_map.view(gt_map.size(0), -1).sum(dim=1) / self.cfg_data.LOG_PARA
+                gt_count = gt_count.unsqueeze(1)
+                
+                pred_count = self.net(img, gt_count)
+
+                loss = nn.MSELoss()(pred_count.squeeze(), gt_count.squeeze())
+                losses.update(loss.item())
+
+                for i in range(pred_count.shape[0]):
+                    pred_cnt = pred_count[i].item() / self.cfg_data.LOG_PARA
+                    gt_cnt = gt_count[i].item() / self.cfg_data.LOG_PARA
+
+                    maes.update(abs(gt_cnt - pred_cnt))
+                    mses.update((gt_cnt - pred_cnt) ** 2)
+
+        mae = maes.avg
+        mse = np.sqrt(mses.avg)
+        loss = losses.avg
+        
+        print('val_loss: %.4f, mae: %.4f, mse: %.4f' % (loss, mae, mse))
+
+        self.writer.add_scalar('val_loss', loss, self.epoch + 1)
+        self.writer.add_scalar('mae', mae, self.epoch + 1)
+        self.writer.add_scalar('mse', mse, self.epoch + 1)
+
+        self.train_record = update_model(
+            self.net, self.optimizer, self.scheduler, self.epoch, self.i_tb, self.exp_path, 
+            self.exp_name, [mae, mse, loss], self.train_record, self.log_txt
+        )
+        print_summary(self.exp_name, [mae, mse, loss], self.train_record)
 
     def validate_V2(self):# validate_V2 for WE
 
