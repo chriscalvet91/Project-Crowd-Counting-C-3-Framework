@@ -64,7 +64,7 @@ class Trainer():
             self.timer['train time'].tic()
             if self.net_name == 'Res101_SFCN_bayesian':
                 self.train_mc()
-            elif self.net_name == 'LinearNet':
+            elif self.net_name == 'LinearNet' or self.net_name == 'MLP':
                 self.train_linear()
             else:
                 self.train()
@@ -80,7 +80,7 @@ class Trainer():
             if epoch%cfg.VAL_FREQ==0 or epoch>cfg.VAL_DENSE_START:
                 self.timer['val time'].tic()
                 if self.data_mode in ['SHHA', 'SHHB', 'QNRF', 'UCF50', 'DroneCrowd']:
-                    if self.net_name == 'LinearNet':
+                    if self.net_name == 'LinearNet' or self.net_name == 'MLP':
                         self.validate_lin()
                     else:    
                         self.validate_V1()
@@ -95,6 +95,8 @@ class Trainer():
     def train(self): # training for all datasets
         self.net.train()
         for i, data in enumerate(self.train_loader, 0):
+            if i > 400:
+                break
             self.timer['iter time'].tic()
             img, gt_map = data
             img = Variable(img)
@@ -122,6 +124,8 @@ class Trainer():
         self.net.train()
     
         for i, data in enumerate(self.train_loader, 0):
+            if i > 400:
+                break
             self.timer['iter time'].tic()
             img, gt_map = data
             img = Variable(img)
@@ -131,7 +135,7 @@ class Trainer():
                 img = img.cuda()
                 gt_map = gt_map.cuda()
             
-            gt_count = gt_map.view(gt_map.size(0), -1).sum(dim=1) / self.cfg_data.LOG_PARA
+            gt_count = gt_map.view(gt_map.size(0), -1).sum(dim=1)
             gt_count = gt_count.unsqueeze(1)
             
             self.optimizer.zero_grad()
@@ -154,7 +158,7 @@ class Trainer():
                 ))
                 
                 print('        [cnt: gt: %.1f pred: %.2f]' % (
-                    gt_count[0].item(), 
+                    gt_count[0].item()/self.cfg_data.LOG_PARA, 
                     pred_count[0].item()
                 ))
 
@@ -198,6 +202,8 @@ class Trainer():
         mses = AverageMeter()
 
         for vi, data in enumerate(self.val_loader, 0):
+            if vi > 400:
+                break
             img, gt_map = data
 
             with torch.no_grad():
@@ -240,22 +246,27 @@ class Trainer():
         maes = AverageMeter()
         mses = AverageMeter()
         for vi, data in enumerate(self.val_loader, 0):
+            if vi > 400:
+                break
             img, gt_map = data
             with torch.no_grad():
                 img = Variable(img).cuda()
                 gt_map = Variable(gt_map).cuda()
 
-                gt_count = gt_map.view(gt_map.size(0), -1).sum(dim=1) / self.cfg_data.LOG_PARA
+                gt_count = gt_map.view(gt_map.size(0), -1).sum(dim=1)
                 gt_count = gt_count.unsqueeze(1)
                 
                 pred_count = self.net(img, gt_count)
 
                 loss = nn.MSELoss()(pred_count.squeeze(), gt_count.squeeze())
-                losses.update(loss.item())
+                #losses.update(loss.item())
 
                 for i in range(pred_count.shape[0]):
                     pred_cnt = pred_count[i].item() / self.cfg_data.LOG_PARA
                     gt_cnt = gt_count[i].item() / self.cfg_data.LOG_PARA
+
+                    loss = nn.MSELoss()(pred_count, gt_count)
+                    losses.update(loss.item())
 
                     maes.update(abs(gt_cnt - pred_cnt))
                     mses.update((gt_cnt - pred_cnt) ** 2)

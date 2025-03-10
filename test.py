@@ -18,7 +18,7 @@ from PIL import Image, ImageOps
 torch.cuda.set_device(0)
 torch.backends.cudnn.benchmark = True
 
-exp_name = '../SHHB_results'
+exp_name = '/Data/DroneCrowd/DroneCrowd_results_Res101_SFCN_1e-05'
 if not os.path.exists(exp_name):
     os.mkdir(exp_name)
 
@@ -39,9 +39,9 @@ restore = standard_transforms.Compose([
     ])
 pil_to_tensor = standard_transforms.ToTensor()
 
-dataRoot = '../ProcessedData/shanghaitech_part_B/test'
+dataRoot = '/users/eleves-b/2022/martin.beaufils/CrowdCounting/shanghaitech_part_B/test_data'
 
-model_path = 'xxx.pth'
+model_path = '/users/eleves-b/2022/martin.beaufils/CrowdCounting/C-3-Framework/exp/02-25_11-46_SHHB_Res101_SFCN_1e-05/all_ep_21_mae_8.0_mse_12.6.pth'
 
 def main():
     
@@ -63,8 +63,9 @@ def test(file_list, model_path):
     gts = []
     preds = []
 
-    for filename in file_list:
-    	print( filename )
+    for i, filename in enumerate(file_list):
+        if i % 10 == 0:
+            print('%d/%d' % (i, len(file_list)))
         imgname = dataRoot + '/img/' + filename
         filename_no_ext = filename.split('.')[0]
 
