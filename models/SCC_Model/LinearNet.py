@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 
 class LinearNet(nn.Module):
-    def __init__(self, input_size=6220800):
+    def __init__(self, input_size=2359296):
         super(LinearNet, self).__init__()
         self.fc1 = nn.Linear(input_size, 1) 
 

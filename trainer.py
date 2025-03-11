@@ -95,8 +95,6 @@ class Trainer():
     def train(self): # training for all datasets
         self.net.train()
         for i, data in enumerate(self.train_loader, 0):
-            if i > 400:
-                break
             self.timer['iter time'].tic()
             img, gt_map = data
             img = Variable(img)
@@ -124,8 +122,6 @@ class Trainer():
         self.net.train()
     
         for i, data in enumerate(self.train_loader, 0):
-            if i > 400:
-                break
             self.timer['iter time'].tic()
             img, gt_map = data
             img = Variable(img)
@@ -202,8 +198,6 @@ class Trainer():
         mses = AverageMeter()
 
         for vi, data in enumerate(self.val_loader, 0):
-            if vi > 400:
-                break
             img, gt_map = data
 
             with torch.no_grad():
@@ -246,8 +240,6 @@ class Trainer():
         maes = AverageMeter()
         mses = AverageMeter()
         for vi, data in enumerate(self.val_loader, 0):
-            if vi > 400:
-                break
             img, gt_map = data
             with torch.no_grad():
                 img = Variable(img).cuda()
